@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Equilibrio Estático y Biomecánica | UCCuyo</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- KaTeX for rendering mathematical formulas in LaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #f7f9f6;
+      color: #1e293b;
+    }
+
+    /* Paleta Institucional Verde Oliva UCCuyo */
+    .text-accent { color: #436600; }
+    .bg-accent { background-color: #436600; }
+    .bg-accent-hover:hover { background-color: #324d00; }
+    .bg-accent-light { background-color: #f1f6eb; }
+    .border-accent { border-color: #436600; }
+
+    .text-primary { color: #436600; }
+    .bg-primary { background-color: #436600; }
+    .bg-primary-dark { background-color: #324d00; }
+    .border-primary { border-color: #436600; }
+
+    .focus-accent:focus {
+      border-color: #436600;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(67, 102, 0, 0.2);
+    }
+
+    .font-mono-math {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom scrollbars */
+    .custom-scroll::-webkit-scrollbar,
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb,
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover,
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .canvas-container {
+      position: relative;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-accent-light selection:text-accent">
+
+  <!-- Cabecera Institucional UCCuyo -->
+  <header class="bg-white border-b border-gray-200 shadow-xs sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-gray-900 font-bold font-bold text-lg shadow-sm">
+          F
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-gray-800 tracking-wide uppercase">FÍSICA</h1>
+          <p class="text-xs text-gray-500 font-semibold">PreMédico (Facultad de Cs. Médicas - UCCuyo)</p>
+        </div>
+      </div>
+      <!-- Botón Guía de Uso -->
+      <button onclick="openTutorial()" class="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-gray-900 font-bold text-xs font-semibold rounded-lg shadow-sm hover:opacity-90 transition">
+        <i class="fa-solid fa-graduation-cap"></i>
+        Guía de Uso
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenido Principal con Menú Lateral -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6">
+        
+    <!-- Menú de Navegación Lateral -->
+    <nav class="w-full lg:w-64 flex flex-row lg:flex-col gap-2 bg-white p-3 rounded-2xl shadow-sm border border-gray-100 overflow-x-auto lg:overflow-x-visible whitespace-nowrap lg:whitespace-normal sticky top-20 h-fit">
+      <button id="tab-btn-1" onclick="switchModule(1)" class="tab-btn bg-accent text-white flex-1 lg:flex-none text-left py-2.5 px-4 rounded-xl text-sm font-semibold transition shadow-sm flex items-center gap-2.5">
+        <i class="fa-solid fa-scale-balanced text-sm w-4 text-center"></i>
+        <span>1. Condiciones Equilibrio</span>
+      </button>
+      <button id="tab-btn-2" onclick="switchModule(2)" class="tab-btn text-gray-700 hover:bg-gray-100 flex-1 lg:flex-none text-left py-2.5 px-4 rounded-xl text-sm font-medium transition flex items-center gap-2.5">
+        <i class="fa-solid fa-crosshairs text-sm w-4 text-center"></i>
+        <span>2. Centro de Masas & Plomada</span>
+      </button>
+      <button id="tab-btn-3" onclick="switchModule(3)" class="tab-btn text-gray-700 hover:bg-gray-100 flex-1 lg:flex-none text-left py-2.5 px-4 rounded-xl text-sm font-medium transition flex items-center gap-2.5">
+        <i class="fa-solid fa-truck-ramp-box text-sm w-4 text-center"></i>
+        <span>3. Sustentación & Vuelco</span>
+      </button>
+      <button id="tab-btn-4" onclick="switchModule(4)" class="tab-btn text-gray-700 hover:bg-gray-100 flex-1 lg:flex-none text-left py-2.5 px-4 rounded-xl text-sm font-medium transition flex items-center gap-2.5">
+        <i class="fa-solid fa-arrows-spin text-sm w-4 text-center"></i>
+        <span>4. Tipos de Equilibrio</span>
+      </button>
+    </nav>
+
+    <!-- Área de Trabajo Principal (Dos Columnas: Parámetros a la Izquierda y Visualizador a la Derecha) -->
+    <div class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        
+      <!-- Columna Izquierda: Teoría, Controles y Balances (5 cols en XL) -->
+      <section class="xl:col-span-5 flex flex-col space-y-5">
+            
+        <!-- Tarjeta 1: Marco Teórico y Fórmulas KaTeX -->
+        <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+            <h2 class="text-xs font-bold tracking-wider uppercase text-accent flex items-center gap-2">
+              <i class="fa-solid fa-graduation-cap"></i> Fundamento Físico-Matemático
+            </h2>
+            <span id="mode-badge" class="text-[11px] bg-accent-light text-accent px-2.5 py-0.5 rounded-full font-semibold border border-accent/20">Módulo 1</span>
+          </div>
+          
+          <div class="space-y-2">
+            <h3 id="module-title" class="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-accent animate-pulse"></span>
+              Módulo 1: Condiciones del Equilibrio Estático (2D)
+            </h3>
+            <p id="module-desc" class="text-xs text-gray-600 leading-relaxed font-normal">
+              Análisis de la 1a (\(\sum \vec{F} = \vec{0}\)) y 2a (\(\sum \vec{\tau} = \vec{0}\)) condición con descomposición vectorial formal.
+            </p>
+          </div>
+
+          <!-- LaTeX Output Area -->
+          <div id="katex-math-display" class="space-y-3 font-mono text-xs bg-gray-50 p-3.5 rounded-xl border border-gray-100 text-gray-800">
+            <!-- Dynamic math filled via updateMath() -->
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Controles de Entrada y Parámetros -->
+        <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
+          <h2 class="text-xs font-bold tracking-wider uppercase text-accent flex items-center gap-2">
+            <i class="fa-solid fa-sliders"></i> Parámetros de Simulación
+          </h2>
+
+          <div id="module-controls-panel" class="space-y-3.5">
+            <!-- Inyección dinámica según módulo -->
+          </div>
+
+          <!-- Botones de Acción Oficiales -->
+          <div class="pt-3 border-t border-gray-100 flex items-center gap-3">
+            <button onclick="resetCurrentModule()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs">
+              <i class="fa-solid fa-rotate-right"></i> Restablecer Parámetros
+            </button>
+          </div>
+        </div>
+
+        <!-- Tarjeta 3: Métricas Dinámicas / Estado de Equilibrio -->
+        <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+            <h2 class="text-xs font-bold tracking-wider uppercase text-gray-700 flex items-center gap-2">
+              <i class="fa-solid fa-gauge-high text-accent"></i> Balances Escalares y Estado Dinámico
+            </h2>
+          </div>
+          
+          <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col gap-2">
+            <span class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Diagnóstico del Sistema</span>
+            <div id="status-pill" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors flex items-center gap-2 bg-emerald-50 border-emerald-200 text-emerald-800">
+              <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+              <span id="status-text">EQUILIBRIO ESTÁTICO COMPLETO</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Columna Derecha: Canvas Interactivo y Feedback Biomecánico (7 cols en XL) -->
+      <section class="xl:col-span-7 flex flex-col space-y-5">
+            
+        <!-- Tarjeta 4: Contenedor del Canvas Interactivo -->
+        <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-col space-y-3">
+          <div class="flex justify-between items-center px-1">
+            <span id="canvas-title" class="text-xs font-bold text-gray-800 flex items-center gap-2">
+              <i class="fa-solid fa-desktop text-accent"></i> Visor Gráfico Interactivo
+            </span>
+            <div class="flex items-center gap-1.5 text-[11px] text-gray-500 font-medium">
+              <span class="inline-block w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+              Tiempo Real (60 FPS)
+            </div>
+          </div>
+
+          <!-- Sub-toolbar para modos y presets específicos de cada módulo -->
+          <div id="canvas-toolbar" class="flex flex-wrap items-center justify-between bg-gray-50 border border-gray-100 px-3 py-2 rounded-xl text-xs gap-2">
+            <div class="flex items-center gap-2 flex-wrap" id="toolbar-left-actions">
+              <!-- Dynamically injected per module -->
+            </div>
+            <span id="canvas-hint-text" class="text-[11px] text-gray-500 font-medium hidden sm:inline">
+              Interactúa arrastrando elementos en el plano
+            </span>
+          </div>
+
+          <!-- Lienzo Canvas -->
+          <div class="relative w-full aspect-[4/3] bg-slate-50 rounded-xl overflow-hidden shadow-inner border border-gray-200 canvas-container">
+            <canvas id="simCanvas" class="w-full h-full cursor-crosshair block"></canvas>
+            
+            <!-- Canvas HUD: Sistema de Referencia (Claro y nítido) -->
+            <div class="absolute top-3 left-3 bg-white/95 backdrop-blur border border-gray-200 rounded-xl px-3 py-2 text-xs flex flex-col gap-1 pointer-events-none shadow-sm">
+              <span class="text-gray-500 font-medium text-[10px] uppercase font-bold tracking-wider">Sistema de Referencia</span>
+              <div class="flex items-center gap-3 text-gray-700 font-mono text-[11px]">
+                <span class="flex items-center gap-1"><span class="w-2.5 h-1 bg-red-600 inline-block rounded-xs"></span> +X</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-1 bg-emerald-600 inline-block rounded-xs"></span> +Y</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full border border-blue-600 inline-block"></span> +\(\tau_z\)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 5: Correlación Biomecánica y Clínica Médica -->
+        <div id="clinical-note-box" class="bg-accent-light border border-accent/20 rounded-2xl p-5 shadow-sm space-y-2">
+          <h3 class="text-xs font-bold uppercase tracking-wide text-accent flex items-center gap-2">
+            <i class="fa-solid fa-stethoscope"></i> <span id="clinical-title">Correlación Biomecánica y Clínica Médica</span>
+          </h3>
+          <p id="clinical-text" class="text-xs text-gray-700 leading-relaxed font-normal">
+            En la articulación del codo, el bíceps braquial equilibra la torca generada por el peso del antebrazo y la carga en la mano. Para que la extremidad no acelere ni gire, \(\sum \vec{F} = \vec{0}\) en la articulación y \(\sum \vec{\tau} = \vec{0}\) respecto al tróclea humeral.
+          </p>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer Oficial Institucional -->
+  <footer class="bg-white border-t border-gray-200 py-4 mt-8 text-center text-xs text-gray-500">
+    Desarrollado por vesalio - Todos los derechos reservados
+  </footer>
+
+  <!-- Modal Tutorial / Guía de Uso -->
+  <div id="tutorial-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-accent"></span>
+          <h3 class="text-base font-bold text-gray-800 uppercase tracking-wide">Guía de Uso del Simulador de Física</h3>
+        </div>
+        <button onclick="closeTutorial()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+      </div>
+      
+      <div class="space-y-4 text-xs text-gray-600 leading-relaxed">
+        <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+          <span class="font-bold text-gray-800 text-xs block mb-1">Propósito Pedagógico (Curso de Ingreso a Medicina - UCCuyo):</span>
+          Este simulador interactivo entrena al estudiante en el dominio de las leyes del equilibrio mecánico clásico y su correlación con la biomecánica articular, ergonomía y estabilidad postural clínica: las dos condiciones fundamentales del equilibrio estático ($\sum \vec{F} = \vec{0}$ y $\sum \vec{\tau} = \vec{0}$), la deducción escalar en el plano, la localización analítica y experimental del centro de gravedad, el criterio físico de estabilidad geométrica y vuelco, y la dinámica de los tres estados de equilibrio ante perturbaciones externas.
+        </div>
+
+        <div>
+          <h4 class="font-bold text-gray-800 text-sm mb-1 text-accent">1. Módulo 1: Condiciones del Equilibrio Estático (2D)</h4>
+          <ul class="list-disc list-inside space-y-1 ml-1 text-gray-600">
+            <li><strong>Primera Condición de Equilibrio (Traslacional):</strong> Garantiza la ausencia de aceleración lineal neta en el plano cartesiano sagital o frontal:
+              <div class="my-1 pl-4 font-mono text-gray-700">$\sum F_x = 0, \quad \sum F_y = 0$</div>
+            </li>
+            <li><strong>Segunda Condición de Equilibrio (Rotacional):</strong> Garantiza la ausencia de aceleración angular respecto a cualquier eje o punto pivote:
+              <div class="my-1 pl-4 font-mono text-gray-700">$\sum \tau_z = \sum (\vec{r}_i \times \vec{F}_i)_z = 0$</div>
+            </li>
+            <li><strong>Casos de Estudio Comparativos:</strong> Utilice los botones de presets rápidos para contrastar de manera interactiva:
+              <ul class="list-disc list-inside ml-4 space-y-0.5 text-gray-500">
+                <li><em>Equilibrio Total:</em> Se satisfacen simultáneamente ambas condiciones (isometría musculoesquelética).</li>
+                <li><em>Par de Fuerzas (Giro puro):</em> $\sum \vec{F} = \vec{0}$, pero $\sum \tau_z \neq 0$ (rotación sin desplazamiento del centro de masa).</li>
+                <li><em>Fuerza Neta (Traslación pura):</em> $\sum \tau_z = 0$, pero $\sum \vec{F} \neq \vec{0}$ (aceleración lineal sin giro).</li>
+              </ul>
+            </li>
+            <li><strong>Manipulación de Variables:</strong> Modifique con los deslizadores las magnitudes de fuerza ($F_1$, $F_2$), brazos de palanca ($d_1$, $d_2$) y ángulos de aplicación ($\theta_1$, $\theta_2$).</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-gray-800 text-sm mb-1 text-accent">2. Módulo 2: Centro de Masas & Método de la Plomada</h4>
+          <ul class="list-disc list-inside space-y-1 ml-1 text-gray-600">
+            <li><strong>Cálculo Analítico Discreto:</strong> Determinación formal del baricentro a partir de partículas puntuales ponderadas mediante:
+              <div class="my-1 pl-4 font-mono text-gray-700">$x_{cm} = \frac{\sum m_i x_i}{\sum m_i}, \quad y_{cm} = \frac{\sum m_i y_i}{\sum m_i}$</div>
+              Haga clic y arrastre con el ratón cada masa directamente en el lienzo para observar el recalculo en tiempo real del punto baricéntrico.
+            </li>
+            <li><strong>Método Experimental de la Plomada:</strong> Suspensión de un cuerpo irregular desde distintos puntos de pivote (A, B y C). Al pulsar <em>"Trazar Línea de Plomada"</em> se grafica la vertical de acción del peso, intersectándose las directrices con exactitud milimétrica en el centro de gravedad.</li>
+            <li><strong>Relevancia Médica:</strong> Localización del centro de gravedad anatómico a la altura de la segunda vértebra sacra ($S_2$, ~55-57% de la talla total) y estudio de desplazamientos adaptativos durante el embarazo, la obesidad o en pacientes con prótesis.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-gray-800 text-sm mb-1 text-accent">3. Módulo 3: Base de Sustentación, Estabilidad y Criterio de Vuelco</h4>
+          <ul class="list-disc list-inside space-y-1 ml-1 text-gray-600">
+            <li><strong>Criterio Físico de Estabilidad:</strong> El móvil o paciente permanece apoyado y en equilibrio mientras la línea de acción vertical del peso gravitatorio pase dentro de los límites del polígono de sustentación.</li>
+            <li><strong>Condición Crítica de Vuelco:</strong> Cuando la vertical del peso cruza el punto de apoyo externo, el brazo restaurador se anula y se produce una torca desequilibrante neta que causa el vuelco instantáneo.</li>
+            <li><strong>Ecuación del Ángulo Crítico:</strong> Dependencia geométrica formal entre el ancho de apoyo ($b$) y la altura del centro de masa ($h$):
+              <div class="my-1 pl-4 font-mono text-gray-700">$\theta_c = \arctan\left(\frac{b}{2h}\right)$</div>
+            </li>
+            <li><strong>Modelos Clínicos Comparativos:</strong> Alterne entre el transporte de camillas hospitalarias y el polígono de sustentación humano en bipedestación o marcha.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-gray-800 text-sm mb-1 text-accent">4. Módulo 4: Tipos de Equilibrio (Estable, Inestable e Indiferente)</h4>
+          <ul class="list-disc list-inside space-y-1 ml-1 text-gray-600">
+            <li><strong>Equilibrio Estable:</strong> El centro de gravedad se sitúa en un mínimo local de energía potencial. Ante un desplazamiento lateral surge una torca restauradora que regresa el sistema a su posición original.</li>
+            <li><strong>Equilibrio Inestable:</strong> El centro de gravedad descansa sobre un máximo local de energía potencial. Cualquier perturbación genera una torca desestabilizadora divergente.</li>
+            <li><strong>Equilibrio Indiferente (Neutro):</strong> La energía potencial gravitatoria se mantiene constante frente al desplazamiento; el sistema adopta cualquier nueva posición sin generar torcas restauradoras ni divergentes.</li>
+            <li><strong>Ensayo Dinámico de Perturbación:</strong> Utilice el control deslizante de desplazamiento o los pulsadores de empuje lateral para comprobar la respuesta dinámica oscilatoria o divergente.</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-gray-800 text-sm mb-1 text-accent">5. Herramientas y Asistencia de Estudio</h4>
+          <ul class="list-disc list-inside space-y-1 ml-1 text-gray-600">
+            <li><strong>Restablecer Parámetros:</strong> Retorna instantáneamente los controles del módulo activo a sus condiciones iniciales de calibración.</li>
+            <li><strong>Balances Escalares:</strong> Lectura continua con simbología de verificación formal para sumatorias nulas en traslación y rotación.</li>
+            <li><strong>Correlación Biomecánica:</strong> Tarjeta pedagógica inferior con diagnósticos fisiológicos contextualizados al curso médico de la UCCuyo.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-gray-100 flex justify-end">
+        <button onclick="closeTutorial()" class="px-5 py-2 bg-accent text-white text-xs font-semibold rounded-xl hover:bg-accent-hover transition shadow-sm">
+          Entendido
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    const state = {
+      activeModule: 1,
+      // Module 1: Conditions of equilibrium
+      m1: {
+        preset: 'equil', // 'equil', 'transl_accel', 'rot_accel'
+        F1: 40,   // N (Left force)
+        d1: 1.5,  // m (Distance left)
+        theta1: 90, // deg
+        F2: 40,   // N (Right force)
+        d2: 1.5,  // m (Distance right)
+        theta2: 90, // deg
+        F3: 0,    // N (Additional central force)
+        leverMass: 10, // kg
+        pivotX: 0, // lever center
+        rotationAngle: 0,
+        angularVelocity: 0,
+        linearVy: 0,
+        beamY: 0
+      },
+      // Module 2: Center of mass & Plumb-line method
+      m2: {
+        mode: 'discrete', // 'discrete' or 'plumb'
+        particles: [
+          { id: 1, x: -2.0, y: 1.0, m: 3.0, color: '#38bdf8', label: 'm_1' },
+          { id: 2, x: 2.0, y: 1.5, m: 2.0, color: '#f43f5e', label: 'm_2' },
+          { id: 3, x: 1.0, y: -1.5, m: 4.0, color: '#10b981', label: 'm_3' },
+          { id: 4, x: -1.5, y: -1.0, m: 1.0, color: '#fbbf24', label: 'm_4' }
+        ],
+        selectedParticle: null,
+        // Plumb line state
+        plumbPivotIndex: 0, // 0: Pivot A, 1: Pivot B, 2: Pivot C
+        plumbPivots: [
+          { name: 'Pivote A', px: -80, py: -70 },
+          { name: 'Pivote B', px: 90, py: -60 },
+          { name: 'Pivote C', px: -20, py: 90 }
+        ],
+        plumbAngle: 0,
+        plumbAngularVel: 0,
+        tracedLines: [false, false, false], // lines drawn for each pivot
+        bodyShapePoints: [
+          { x: -100, y: -70 },
+          { x: -40, y: -110 },
+          { x: 70, y: -90 },
+          { x: 110, y: -40 },
+          { x: 120, y: 40 },
+          { x: 60, y: 100 },
+          { x: -30, y: 110 },
+          { x: -90, y: 70 },
+          { x: -120, y: 0 }
+        ]
+      },
+      // Module 3: Support base & tipping
+      m3: {
+        inclineAngle: 12, // degrees
+        baseWidth: 1.8,   // meters (track width)
+        cgHeight: 1.2,    // meters (CG height)
+        vehicleWeight: 12000, // N
+        animAngle: 12,
+        isTipped: false,
+        vehicleType: 'camilla' // 'camilla' (ambulancia/hospital) or 'humano'
+      },
+      // Module 4: Types of equilibrium
+      m4: {
+        systemType: 'bowl', // 'bowl' (sphere in bowl/hill), 'cone', 'pendulum'
+        subState: 'stable',  // 'stable', 'unstable', 'neutral'
+        perturbation: 0,     // displacement angle or x
+        perturbVelocity: 0,
+        isDragging: false
+      }
+    };
+
+    // Canvas references & scaling
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 0;
+    let height = 0;
+    let animFrameId = null;
+
+    // Coordinate conversion utilities
+    function toCanvasX(xMeters, scale = 70) {
+      return width / 2 + xMeters * scale;
+    }
+    function toCanvasY(yMeters, scale = 70) {
+      return height / 2 - yMeters * scale;
+    }
+    function fromCanvasX(canvasX, scale = 70) {
+      return (canvasX - width / 2) / scale;
+    }
+    function fromCanvasY(canvasY, scale = 70) {
+      return -(canvasY - height / 2) / scale;
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      width = rect.width;
+      height = rect.height;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      draw();
+    });
+
+    
+    // Modal Guía de Uso
+    function openTutorial() {
+      const modal = document.getElementById('tutorial-modal');
+      modal.classList.remove('hidden');
+      if (window.renderMathInElement) {
+        renderMathInElement(modal, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      }
+    }
+    function closeTutorial() {
+      document.getElementById('tutorial-modal').classList.add('hidden');
+    }
+
+    function switchModule(modNum) {
+      state.activeModule = modNum;
+      
+      // Update lateral nav buttons styles to institutional standard
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`tab-btn-${i}`);
+        if (btn) {
+          if (i === modNum) {
+            btn.className = "tab-btn bg-accent text-white flex-1 lg:flex-none text-left py-2.5 px-4 rounded-xl text-sm font-semibold transition flex items-center gap-2.5 shadow-sm";
+          } else {
+            btn.className = "tab-btn text-gray-700 hover:bg-gray-100 flex-1 lg:flex-none text-left py-2.5 px-4 rounded-xl text-sm font-medium transition flex items-center gap-2.5";
+          }
+        }
+      }
+
+      const modTitles = [
+        "Módulo 1: Condiciones del Equilibrio Estático (2D)",
+        "Módulo 2: Centro de Masas & Método de la Plomada",
+        "Módulo 3: Base de Sustentación, Estabilidad y Criterio de Vuelco",
+        "Módulo 4: Tipos de Equilibrio (Estable, Inestable e Indiferente)"
+      ];
+      const modDescs = [
+        "Análisis de la 1a (\\(\\sum \\vec{F} = \\vec{0}\\)) y 2a (\\(\\sum \\vec{\\tau} = \\vec{0}\\)) condición con descomposición vectorial formal.",
+        "Determinación analítica discreta de \\(\\vec{r}_{cm}\\) y experimental por líneas de suspensión gravitacional.",
+        "Verificación biomecánica: relación entre ancho de apoyo, altura del baricentro y ángulo límite de vuelco.",
+        "Respuesta dinámica a perturbaciones: pozo de energía potencial, torcas restauradoras vs. desestabilizadoras."
+      ];
+
+      document.getElementById('module-title').innerHTML = `
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+        ${modTitles[modNum - 1]}
+      `;
+      document.getElementById('module-desc').innerHTML = modDescs[modNum - 1];
+      document.getElementById('mode-badge').innerText = `Módulo ${modNum}`;
+      document.getElementById('mode-badge').className = 'text-xs font-bold uppercase tracking-wider text-accent bg-accent-light px-2.5 py-1 rounded-md border border-accent/20';
+
+      // Refresh toolbar, controls & analytical math
+      updateToolbar();
+      updateControlsUI();
+      updateClinicalNote();
+      updateMath();
+
+      if (window.renderMathInElement) {
+        renderMathInElement(document.getElementById('module-desc'), {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ]
+        });
+      }
+    }
+
+    function updateToolbar() {
+      const toolbarLeft = document.getElementById('toolbar-left-actions');
+      const hintText = document.getElementById('canvas-hint-text');
+
+      if (state.activeModule === 1) {
+        hintText.innerText = "Arrastra los controles o cambia los casos para observar el comportamiento dinámico";
+        toolbarLeft.innerHTML = `
+          <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200">
+            <button onclick="setM1Preset('equil')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m1.preset === 'equil' ? 'bg-accent text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Equilibrio Total</button>
+            <button onclick="setM1Preset('rot_accel')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m1.preset === 'rot_accel' ? 'bg-amber-600 text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Par de Fuerzas (Giro)</button>
+            <button onclick="setM1Preset('transl_accel')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m1.preset === 'transl_accel' ? 'bg-emerald-700 text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Fuerza Neta (Traslación)</button>
+          </div>
+        `;
+      } else if (state.activeModule === 2) {
+        hintText.innerText = state.m2.mode === 'discrete' ? "Arrastra las partículas con el cursor para recalcular el baricentro" : "Cambia de pivote y traza la línea vertical gravitatoria";
+        toolbarLeft.innerHTML = `
+          <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200">
+            <button onclick="setM2Mode('discrete')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m2.mode === 'discrete' ? 'bg-accent text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Cálculo Analítico (Partículas)</button>
+            <button onclick="setM2Mode('plumb')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m2.mode === 'plumb' ? 'bg-accent text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Método de la Plomada</button>
+          </div>
+        `;
+      } else if (state.activeModule === 3) {
+        hintText.innerText = "Ajusta la inclinación de la rampa para comprobar si la vertical de P cae dentro de la base";
+        toolbarLeft.innerHTML = `
+          <div class="flex items-center gap-2">
+            <button onclick="toggleVehicleType()" class="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-semibold border border-gray-200 rounded-lg">
+              Modo: <span class="text-blue-700 font-bold font-bold">${state.m3.vehicleType === 'camilla' ? 'Camilla de Ambulancia' : 'Bípedo / Marcha Humana'}</span>
+            </button>
+          </div>
+        `;
+      } else if (state.activeModule === 4) {
+        hintText.innerText = "Arrastra el objeto para perturbarlo y suelta para verificar si retorna o colapsa";
+        toolbarLeft.innerHTML = `
+          <div class="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200">
+            <button onclick="setM4Type('bowl')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m4.systemType === 'bowl' ? 'bg-accent text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Superficie Curva</button>
+            <button onclick="setM4Type('cone')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m4.systemType === 'cone' ? 'bg-accent text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Cuerpo Sólido / Cono</button>
+            <button onclick="setM4Type('pendulum')" class="px-2.5 py-1 rounded text-[11px] font-semibold transition ${state.m4.systemType === 'pendulum' ? 'bg-accent text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">Péndulo Péndulo Invertido</button>
+          </div>
+        `;
+      }
+    }
+
+    function setM1Preset(preset) {
+      state.m1.preset = preset;
+      state.m1.rotationAngle = 0;
+      state.m1.angularVelocity = 0;
+      state.m1.linearVy = 0;
+      state.m1.beamY = 0;
+
+      if (preset === 'equil') {
+        state.m1.F1 = 40;
+        state.m1.d1 = 1.5;
+        state.m1.theta1 = 90;
+        state.m1.F2 = 40;
+        state.m1.d2 = 1.5;
+        state.m1.theta2 = 90;
+        state.m1.F3 = 0;
+      } else if (preset === 'rot_accel') {
+        // Par de fuerzas: F1 hacia abajo, F2 hacia arriba -> Sum F = 0, pero Sum Tau != 0
+        state.m1.F1 = 40;
+        state.m1.d1 = 1.5;
+        state.m1.theta1 = 270; // downward
+        state.m1.F2 = 40;
+        state.m1.d2 = 1.5;
+        state.m1.theta2 = 90;  // upward
+        state.m1.F3 = 0;
+      } else if (preset === 'transl_accel') {
+        // Fuerzas concurrentes o simétricas que causan traslación sin rotación
+        state.m1.F1 = 40;
+        state.m1.d1 = 1.5;
+        state.m1.theta1 = 90; // upward
+        state.m1.F2 = 40;
+        state.m1.d2 = 1.5;
+        state.m1.theta2 = 90; // upward
+        state.m1.F3 = -80;    // will be unanchored or unbalanced
+      }
+      updateToolbar();
+      updateControlsUI();
+      updateMath();
+    }
+
+    function updateControlsUI() {
+      const panel = document.getElementById('module-controls-panel');
+      panel.innerHTML = '';
+
+      if (state.activeModule === 1) {
+        panel.innerHTML = `
+          <!-- Force 1 Controls -->
+          <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex flex-col gap-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-blue-700 font-bold">
+              <span>Fuerza \\(\\vec{F}_1\\) (Brazo Izquierdo)</span>
+              <span class="font-mono text-gray-900 font-bold" id="val-f1">${state.m1.F1} N | ${state.m1.d1.toFixed(1)} m</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <label class="text-[10px] text-gray-500 font-medium">Magnitud \\(F_1\\):</label>
+                <input type="range" min="0" max="100" step="1" value="${state.m1.F1}" oninput="state.m1.F1 = parseFloat(this.value); syncM1();" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-500 font-medium">Brazo \\(d_1\\):</label>
+                <input type="range" min="0.2" max="2.5" step="0.1" value="${state.m1.d1}" oninput="state.m1.d1 = parseFloat(this.value); syncM1();" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent">
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-500 font-medium">Ángulo \\(\\theta_1\\): <span id="val-th1" class="font-mono text-gray-800">${state.m1.theta1}°</span></label>
+              <input type="range" min="0" max="360" step="5" value="${state.m1.theta1}" oninput="state.m1.theta1 = parseFloat(this.value); syncM1();" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent">
+            </div>
+          </div>
+
+          <!-- Force 2 Controls -->
+          <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex flex-col gap-2">
+            <div class="flex items-center justify-between text-xs font-semibold text-amber-700 font-bold">
+              <span>Fuerza \\(\\vec{F}_2\\) (Brazo Derecho)</span>
+              <span class="font-mono text-gray-900 font-bold" id="val-f2">${state.m1.F2} N | ${state.m1.d2.toFixed(1)} m</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <label class="text-[10px] text-gray-500 font-medium">Magnitud \\(F_2\\):</label>
+                <input type="range" min="0" max="100" step="1" value="${state.m1.F2}" oninput="state.m1.F2 = parseFloat(this.value); syncM1();" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-600">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-500 font-medium">Brazo \\(d_2\\):</label>
+                <input type="range" min="0.2" max="2.5" step="0.1" value="${state.m1.d2}" oninput="state.m1.d2 = parseFloat(this.value); syncM1();" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-600">
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-500 font-medium">Ángulo \\(\\theta_2\\): <span id="val-th2" class="font-mono text-gray-800">${state.m1.theta2}°</span></label>
+              <input type="range" min="0" max="360" step="5" value="${state.m1.theta2}" oninput="state.m1.theta2 = parseFloat(this.value); syncM1();" class="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-600">
+            </div>
+          </div>
+        `;
+      } else if (state.activeModule === 2) {
+        if (state.m2.mode === 'discrete') {
+          panel.innerHTML = `
+            <div class="text-xs text-gray-700">
+              Configura las masas individuales de las partículas discretas en el plano articular:
+            </div>
+            <div class="space-y-2.5">
+              ${state.m2.particles.map(p => `
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between gap-3 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: ${p.color}"></span>
+                    <span class="font-semibold text-gray-800">${p.label}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-gray-500 font-medium">Masa:</span>
+                    <input type="range" min="0.5" max="10" step="0.5" value="${p.m}" oninput="setParticleMass(${p.id}, this.value)" class="w-24 h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent">
+                    <span class="font-mono text-[11px] text-gray-900 font-bold w-10 text-right">${p.m.toFixed(1)} kg</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="text-[11px] text-gray-500 font-medium bg-white p-3 rounded-xl border border-gray-200">
+              💡 <em>Tip didáctico:</em> Puedes arrastrar cada masa libremente en el plano cartesiano del simulador para recalcular al instante \\((x_{cm}, y_{cm})\\).
+            </div>
+          `;
+        } else {
+          panel.innerHTML = `
+            <div class="flex flex-col gap-3 text-xs">
+              <span class="text-gray-700">Método de la Plomada en Lámina Irregular:</span>
+              <div class="grid grid-cols-3 gap-2">
+                ${state.m2.plumbPivots.map((p, idx) => `
+                  <button onclick="selectPlumbPivot(${idx})" class="p-2.5 rounded-xl border flex flex-col items-center gap-1 text-center transition ${state.m2.plumbPivotIndex === idx ? 'bg-blue-50 border-blue-600 text-blue-800 font-bold shadow-xs' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}">
+                    <span class="text-xs font-bold">${p.name}</span>
+                    <span class="text-[10px] ${state.m2.tracedLines[idx] ? 'text-emerald-700 font-bold font-semibold' : 'text-slate-500'}">
+                      ${state.m2.tracedLines[idx] ? '✓ Trazada' : 'Pendiente'}
+                    </span>
+                  </button>
+                `).join('')}
+              </div>
+              <div class="flex gap-2">
+                <button onclick="tracePlumbLine()" class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-gray-900 font-bold font-semibold rounded-xl text-xs shadow-md transition flex items-center justify-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                  Trazar Línea Vertical Gravitatoria
+                </button>
+                <button onclick="resetPlumbLines()" class="py-2 px-3 bg-gray-200 hover:bg-slate-700 text-gray-700 rounded-xl text-xs transition border border-slate-700">
+                  Limpiar
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-500 font-medium">
+                Al suspender el objeto desde un punto fijo libre de fricción, el centro de gravedad (CG) se alinea espontáneamente en la vertical bajo el pivote para anular el momento del peso. La intersección de 2 o más líneas revela el baricentro exacto.
+              </p>
+            </div>
+          `;
+        }
+      } else if (state.activeModule === 3) {
+        const critAngle = Math.atan((state.m3.baseWidth / 2) / state.m3.cgHeight) * 180 / Math.PI;
+        panel.innerHTML = `
+          <div class="space-y-3 text-xs">
+            <!-- Angle slider -->
+            <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex flex-col gap-2">
+              <div class="flex justify-between items-center">
+                <label class="font-semibold text-gray-800">Ángulo de Inclinación (\\(\\theta\\)):</label>
+                <span class="font-mono text-sm text-blue-700 font-bold font-bold" id="val-theta">${state.m3.inclineAngle.toFixed(1)}°</span>
+              </div>
+              <input type="range" min="0" max="45" step="0.5" value="${state.m3.inclineAngle}" oninput="state.m3.inclineAngle = parseFloat(this.value); syncM3();" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent">
+              <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>0° (Horizontal)</span>
+                <span class="text-amber-400 font-bold">Límite Crítico: ${critAngle.toFixed(1)}°</span>
+                <span>45° (Extremo)</span>
+              </div>
+            </div>
+
+            <!-- Base width slider -->
+            <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex flex-col gap-2">
+              <div class="flex justify-between items-center">
+                <label class="font-semibold text-gray-800">Ancho de la Base (\\(b\\)):</label>
+                <span class="font-mono text-sm text-gray-900 font-bold" id="val-b">${state.m3.baseWidth.toFixed(2)} m</span>
+              </div>
+              <input type="range" min="0.8" max="2.6" step="0.05" value="${state.m3.baseWidth}" oninput="state.m3.baseWidth = parseFloat(this.value); syncM3();" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-700">
+              <span class="text-[10px] text-gray-500 font-medium">A mayor base de sustentación, mayor polígono de estabilidad.</span>
+            </div>
+
+            <!-- Center of gravity height slider -->
+            <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex flex-col gap-2">
+              <div class="flex justify-between items-center">
+                <label class="font-semibold text-gray-800">Altura del Centro de Gravedad (\\(h\\)):</label>
+                <span class="font-mono text-sm text-amber-700 font-bold font-bold" id="val-h">${state.m3.cgHeight.toFixed(2)} m</span>
+              </div>
+              <input type="range" min="0.5" max="2.0" step="0.05" value="${state.m3.cgHeight}" oninput="state.m3.cgHeight = parseFloat(this.value); syncM3();" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-amber-600">
+              <span class="text-[10px] text-gray-500 font-medium">Elevar el CG reduce drásticamente el ángulo tolerable de inclinación.</span>
+            </div>
+          </div>
+        `;
+      } else if (state.activeModule === 4) {
+        panel.innerHTML = `
+          <div class="space-y-3 text-xs">
+            <span class="text-gray-700">Selecciona el estado fundamental para ensayar:</span>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="setM4Substate('stable')" class="p-2.5 rounded-xl border flex flex-col items-center gap-1 transition ${state.m4.subState === 'stable' ? 'bg-emerald-50 border-emerald-600 text-emerald-800 font-bold shadow-xs' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}">
+                <span class="text-xs font-bold">Estable</span>
+                <span class="text-[10px] text-gray-500 font-medium">Torca restauradora</span>
+              </button>
+              <button onclick="setM4Substate('unstable')" class="p-2.5 rounded-xl border flex flex-col items-center gap-1 transition ${state.m4.subState === 'unstable' ? 'bg-rose-50 border-rose-600 text-rose-800 font-bold shadow-xs' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}">
+                <span class="text-xs font-bold">Inestable</span>
+                <span class="text-[10px] text-gray-500 font-medium">Torca divergente</span>
+              </button>
+              <button onclick="setM4Substate('neutral')" class="p-2.5 rounded-xl border flex flex-col items-center gap-1 transition ${state.m4.subState === 'neutral' ? 'bg-blue-50 border-blue-600 text-blue-800 font-bold shadow-xs' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}">
+                <span class="text-xs font-bold">Indiferente</span>
+                <span class="text-[10px] text-gray-500 font-medium">Torca nula</span>
+              </button>
+            </div>
+
+            <!-- Perturbation Controller -->
+            <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-200 flex flex-col gap-2">
+              <div class="flex justify-between items-center">
+                <label class="font-semibold text-gray-800">Perturbación / Desplazamiento (\\(\\Delta x\\)):</label>
+                <span class="font-mono text-xs text-blue-700 font-bold" id="val-perturb">${(state.m4.perturbation * 20).toFixed(1)} cm</span>
+              </div>
+              <input type="range" min="-1.5" max="1.5" step="0.05" value="${state.m4.perturbation}" oninput="state.m4.perturbation = parseFloat(this.value); state.m4.perturbVelocity = 0; syncM4();" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent">
+              <div class="flex justify-between text-[10px] text-gray-500 font-medium">
+                <button onclick="perturbSystem(-0.8)" class="px-2 py-1 rounded bg-gray-200 hover:bg-slate-700 text-gray-700">Empuje &larr;</button>
+                <button onclick="perturbSystem(0)" class="px-2 py-1 rounded bg-gray-200 hover:bg-slate-700 text-gray-700">Centrar</button>
+                <button onclick="perturbSystem(0.8)" class="px-2 py-1 rounded bg-gray-200 hover:bg-slate-700 text-gray-700">Empuje &rarr;</button>
+              </div>
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-[11px] text-gray-700 space-y-1">
+              <div><strong>Energía Potencial Gravitatoria:</strong></div>
+              <div id="m4-energy-desc" class="text-gray-500 font-medium">
+                En el equilibrio estable, el centro de gravedad ocupa un mínimo local de energía potencial (\\(d^2U/dx^2 > 0\\)).
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Re-render LaTeX in dynamic inputs if needed
+      if (window.renderMathInElement) {
+        renderMathInElement(panel, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ]
+        });
+      }
+    }
+
+    function syncM1() {
+      document.getElementById('val-f1').innerText = `${state.m1.F1} N | ${state.m1.d1.toFixed(1)} m`;
+      document.getElementById('val-f2').innerText = `${state.m1.F2} N | ${state.m1.d2.toFixed(1)} m`;
+      document.getElementById('val-th1').innerText = `${state.m1.theta1}°`;
+      document.getElementById('val-th2').innerText = `${state.m1.theta2}°`;
+      updateMath();
+    }
+    function setParticleMass(id, val) {
+      const p = state.m2.particles.find(pt => pt.id === id);
+      if (p) {
+        p.m = parseFloat(val);
+        updateControlsUI();
+        updateMath();
+      }
+    }
+    function setM2Mode(mode) {
+      state.m2.mode = mode;
+      updateToolbar();
+      updateControlsUI();
+      updateMath();
+    }
+    function selectPlumbPivot(index) {
+      state.m2.plumbPivotIndex = index;
+      state.m2.plumbAngle = (Math.random() - 0.5) * 0.8; // initial swing
+      state.m2.plumbAngularVel = 0;
+      updateControlsUI();
+      updateMath();
+    }
+    function tracePlumbLine() {
+      state.m2.tracedLines[state.m2.plumbPivotIndex] = true;
+      updateControlsUI();
+      updateMath();
+    }
+    function resetPlumbLines() {
+      state.m2.tracedLines = [false, false, false];
+      updateControlsUI();
+      updateMath();
+    }
+    function syncM3() {
+      document.getElementById('val-theta').innerText = `${state.m3.inclineAngle.toFixed(1)}°`;
+      document.getElementById('val-b').innerText = `${state.m3.baseWidth.toFixed(2)} m`;
+      document.getElementById('val-h').innerText = `${state.m3.cgHeight.toFixed(2)} m`;
+      updateMath();
+    }
+    function toggleVehicleType() {
+      state.m3.vehicleType = state.m3.vehicleType === 'camilla' ? 'humano' : 'camilla';
+      updateToolbar();
+      updateClinicalNote();
+      updateMath();
+    }
+    function setM4Type(type) {
+      state.m4.systemType = type;
+      state.m4.perturbation = 0;
+      state.m4.perturbVelocity = 0;
+      updateToolbar();
+      updateControlsUI();
+      updateClinicalNote();
+      updateMath();
+    }
+    function setM4Substate(sub) {
+      state.m4.subState = sub;
+      state.m4.perturbation = 0;
+      state.m4.perturbVelocity = 0;
+      updateControlsUI();
+      updateClinicalNote();
+      updateMath();
+    }
+    function perturbSystem(amount) {
+      state.m4.perturbation = amount;
+      state.m4.perturbVelocity = 0;
+      syncM4();
+    }
+    function syncM4() {
+      const valEl = document.getElementById('val-perturb');
+      if (valEl) valEl.innerText = `${(state.m4.perturbation * 20).toFixed(1)} cm`;
+      updateMath();
+    }
+    function resetCurrentModule() {
+      if (state.activeModule === 1) {
+        setM1Preset('equil');
+      } else if (state.activeModule === 2) {
+        state.m2.particles = [
+          { id: 1, x: -2.0, y: 1.0, m: 3.0, color: '#38bdf8', label: 'm_1' },
+          { id: 2, x: 2.0, y: 1.5, m: 2.0, color: '#f43f5e', label: 'm_2' },
+          { id: 3, x: 1.0, y: -1.5, m: 4.0, color: '#10b981', label: 'm_3' },
+          { id: 4, x: -1.5, y: -1.0, m: 1.0, color: '#fbbf24', label: 'm_4' }
+        ];
+        resetPlumbLines();
+        updateControlsUI();
+      } else if (state.activeModule === 3) {
+        state.m3.inclineAngle = 12;
+        state.m3.baseWidth = 1.8;
+        state.m3.cgHeight = 1.2;
+        state.m3.animAngle = 12;
+        state.m3.isTipped = false;
+        updateControlsUI();
+      } else if (state.activeModule === 4) {
+        state.m4.perturbation = 0;
+        state.m4.perturbVelocity = 0;
+        updateControlsUI();
+      }
+      updateMath();
+    }
+
+    function updateClinicalNote() {
+      const title = document.getElementById('clinical-title');
+      const text = document.getElementById('clinical-text');
+
+      if (state.activeModule === 1) {
+        title.innerText = "Biomecánica Articular: Palanca de 3er Género en el Codo";
+        text.innerText = "En el antebrazo humano, el punto de apoyo es la articulación humerocubital. El bíceps ejerce una fuerza potente a un brazo de palanca muy corto (~4-5 cm) para equilibrar el peso del antebrazo y objetos sostenidos en la mano a ~35 cm. Si la sumatoria de torcas es nula, el miembro se mantiene en isometría; si la suma de fuerzas articulares excede el límite fisiológico, se produce sobrecarga ligamentaria.";
+      } else if (state.activeModule === 2) {
+        title.innerText = "Localización del Baricentro en el Cuerpo Humano";
+        text.innerText = "En posición anatómica de pie, el centro de gravedad del adulto promedio se localiza a nivel de la 2a vértebra sacra (S2), aproximadamente al 55-57% de la estatura desde el suelo. En amputaciones o durante el embarazo, el CG se desplaza significativamente, obligando a reacomodar la postura compensatoria de la columna vertebral para no caer.";
+      } else if (state.activeModule === 3) {
+        if (state.m3.vehicleType === 'camilla') {
+          title.innerText = "Transporte de Pacientes y Estabilidad de Camillas";
+          text.innerText = "En el traslado en ambulancias y rampas hospitalarias, elevar el plano de la camilla eleva la posición del centro de gravedad. Esto reduce el ángulo crítico de vuelco (\\(\\theta_c = \\arctan(b / 2h)\\)), aumentando exponencialmente el riesgo de desbalance lateral si el móvil toma una curva o supera pendientes pronunciadas.";
+        } else {
+          title.innerText = "Polígono de Sustentación en Geriatría y Rehabilitación";
+          text.innerText = "Durante la marcha senil o con patología neurológica (ataxia), los pacientes amplían espontáneamente la base de sustentación separando los pies o apoyando un bastón. Esto ensancha el polígono de apoyo, asegurando que la proyección vertical del CG no escape de la base incluso ante oscilaciones posturales acentuadas.";
+        }
+      } else if (state.activeModule === 4) {
+        title.innerText = "Equilibrio Postural Humano: Un Péndulo Invertido";
+        text.innerText = "La postura bípeda erecta es intrínsecamente un equilibrio inestable (como un cono sobre su vértice o péndulo invertido). El CG se sitúa muy alto respecto a los pies. El sistema nervioso central mantiene la postura mediante un bucle de control continuo con propioceptores, husos neuromusculares y el aparato vestibular, aplicando microtorcas restauradoras de tobillo y cadera.";
+      }
+    }
+
+    function updateMath() {
+      const display = document.getElementById('katex-math-display');
+      const statusPill = document.getElementById('status-pill');
+      const statusText = document.getElementById('status-text');
+
+      if (state.activeModule === 1) {
+        // Calculations for 2D equilibrium
+        const rad1 = (state.m1.theta1 * Math.PI) / 180;
+        const rad2 = (state.m1.theta2 * Math.PI) / 180;
+
+        // F1 is applied at -d1 on X axis, F2 applied at +d2
+        const F1x = state.m1.F1 * Math.cos(rad1);
+        const F1y = state.m1.F1 * Math.sin(rad1);
+        const F2x = state.m1.F2 * Math.cos(rad2);
+        const F2y = state.m1.F2 * Math.sin(rad2);
+
+        const sumFx = F1x + F2x;
+        const sumFy = F1y + F2y;
+
+        // Torque about pivot (x=0)
+        // Tau = r x F => Tau1 = (-d1) * F1y - (0)*F1x = -d1*F1y; wait:
+        // Position of F1: (-d1, 0). Tau1_z = x * Fy - y * Fx = (-d1)*F1y = -d1*F1*sin(theta1)
+        // Position of F2: (+d2, 0). Tau2_z = (+d2)*F2y = d2*F2*sin(theta2)
+        // In physics: tau = r * F * sin(phi). Left force upwards (theta=90) creates clockwise torque (negative in standard right hand rule: z out of screen).
+        // Let's adopt standard Cartesian: r1 = (-d1, 0, 0), F1 = (F1x, F1y, 0).
+        // r1 x F1 = (-d1 * F1y) k. Upward on left gives clockwise (-).
+        // r2 = (d2, 0, 0), F2 = (F2x, F2y, 0).
+        // r2 x F2 = (d2 * F2y) k. Upward on right gives counter-clockwise (+).
+        const tau1 = -state.m1.d1 * F1y;
+        const tau2 = state.m1.d2 * F2y;
+        const sumTau = tau1 + tau2;
+
+        const isFxZero = Math.abs(sumFx) < 0.1;
+        const isFyZero = Math.abs(sumFy) < 0.1;
+        const isTauZero = Math.abs(sumTau) < 0.5;
+
+        let statusClass = "";
+        let textStatus = "";
+
+        if (isFxZero && isFyZero && isTauZero) {
+          statusClass = "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-bold";
+          textStatus = "EQUILIBRIO ESTÁTICO COMPLETO (\\(\\sum \\vec{F}=\\vec{0}\\;\\land\\;\\sum \\vec{\\tau}=\\vec{0}\\))";
+        } else if (isFxZero && isFyZero && !isTauZero) {
+          statusClass = "bg-orange-500/10 border-orange-500/30 text-amber-700 font-bold";
+          textStatus = "ACELERACIÓN ROTACIONAL PURA (\\(\\sum \\vec{F}=\\vec{0}\\;,\\;\\sum \\tau_z \\neq 0\\))";
+        } else if (!isFyZero && isTauZero) {
+          statusClass = "bg-blue-500/10 border-blue-500/30 text-blue-700 font-bold";
+          textStatus = "ACELERACIÓN LINEAL PURA (\\(\\sum \\vec{\\tau}=\\vec{0}\\;,\\;\\sum \\vec{F} \\neq \\vec{0}\\))";
+        } else {
+          statusClass = "bg-rose-50 border-rose-200 text-rose-800";
+          textStatus = "MOVIMIENTO COMBINADO (TRASLACIÓN Y ROTACIÓN)";
+        }
+        statusPill.className = `self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 ${statusClass}`;
+        statusText.innerHTML = textStatus;
+
+        display.innerHTML = `
+          <div class="text-gray-700 font-semibold mb-1 text-[11px] text-blue-700 font-bold">1. Primera Condición de Equilibrio (Traslación):</div>
+          <div>$$\\sum F_x = F_{1x} + F_{2x} = ${F1x.toFixed(1)} + (${F2x.toFixed(1)}) = ${sumFx.toFixed(1)}\\text{ N} \\quad ${isFxZero ? '\\color{#10b981}{\\checkmark}' : '\\color{#f43f5e}{\\boldsymbol{\\times}}'}$$</div>
+          <div>$$\\sum F_y = F_{1y} + F_{2y} = ${F1y.toFixed(1)} + (${F2y.toFixed(1)}) = ${sumFy.toFixed(1)}\\text{ N} \\quad ${isFyZero ? '\\color{#10b981}{\\checkmark}' : '\\color{#f43f5e}{\\boldsymbol{\\times}}'}$$</div>
+          <div class="border-t border-gray-200 my-1.5 pt-1.5 text-gray-700 font-semibold text-[11px] text-amber-700 font-bold">2. Segunda Condición de Equilibrio (Rotación en el Plano):</div>
+          <div>$$\\tau_1 = -d_1 F_{1y} = -(${state.m1.d1.toFixed(1)})(${F1y.toFixed(1)}) = ${tau1.toFixed(1)}\\text{ N}\\cdot\\text{m}$$</div>
+          <div>$$\\tau_2 = +d_2 F_{2y} = +(${state.m1.d2.toFixed(1)})(${F2y.toFixed(1)}) = ${tau2.toFixed(1)}\\text{ N}\\cdot\\text{m}$$</div>
+          <div>$$\\sum \\tau_z = \\tau_1 + \\tau_2 = ${sumTau.toFixed(1)}\\text{ N}\\cdot\\text{m} \\quad ${isTauZero ? '\\color{#10b981}{\\checkmark\\;\\text{(Sin rotación)}}' : '\\color{#f97316}{\\boldsymbol{\\alpha}_z \\neq 0\\;\\text{(Acelera)}}'}$$</div>
+        `;
+      } else if (state.activeModule === 2) {
+        if (state.m2.mode === 'discrete') {
+          let sumM = 0;
+          let sumMx = 0;
+          let sumMy = 0;
+          state.m2.particles.forEach(p => {
+            sumM += p.m;
+            sumMx += p.m * p.x;
+            sumMy += p.m * p.y;
+          });
+          const xcm = sumMx / sumM;
+          const ycm = sumMy / sumM;
+
+          statusPill.className = "self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 bg-blue-500/10 border-blue-500/30 text-blue-700 font-bold";
+          statusText.innerHTML = `BARICENTRO: \\(x_{cm} = ${xcm.toFixed(2)}\\text{ m},\\; y_{cm} = ${ycm.toFixed(2)}\\text{ m}\\)`;
+
+          display.innerHTML = `
+            <div class="text-gray-700 font-semibold mb-1 text-[11px] text-blue-700 font-bold">Cálculo Analítico del Centro de Masas:</div>
+            <div>$$M_{\\text{total}} = \\sum_{i=1}^4 m_i = ${sumM.toFixed(1)}\\text{ kg}$$</div>
+            <div>$$x_{cm} = \\frac{\\sum m_i x_i}{\\sum m_i} = \\frac{${sumMx.toFixed(2)}}{${sumM.toFixed(1)}} = ${xcm.toFixed(2)}\\text{ m}$$</div>
+            <div>$$y_{cm} = \\frac{\\sum m_i y_i}{\\sum m_i} = \\frac{${sumMy.toFixed(2)}}{${sumM.toFixed(1)}} = ${ycm.toFixed(2)}\\text{ m}$$</div>
+            <div class="text-[10px] text-gray-500 font-medium mt-1">$$\\vec{r}_{cm} = ${xcm.toFixed(2)}\\hat{i} + ${ycm.toFixed(2)}\\hat{j}\\;[\\text{m}]$$</div>
+          `;
+        } else {
+          const linesDone = state.m2.tracedLines.filter(Boolean).length;
+          statusPill.className = `self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 ${linesDone >= 2 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-bold' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'}`;
+          statusText.innerHTML = linesDone >= 2 ? "INTERSECCIÓN DE PLOMADAS: CG IDENTIFICADO" : `TRAZADAS: ${linesDone} / 3 LÍNEAS VERTICALES`;
+
+          display.innerHTML = `
+            <div class="text-gray-700 font-semibold mb-1 text-[11px] text-emerald-700 font-bold">Principio Físico de la Plomada:</div>
+            <div>$$\\sum \\vec{\\tau}_{\\text{pivote}} = \\vec{r}_{\\text{CG/piv}} \\times m\\vec{g} = \\vec{0}$$</div>
+            <div class="text-[11px] text-gray-700 mt-1">
+              Para anular la torca, el vector posición \\(\\vec{r}_{\\text{CG/piv}}\\) debe ser colineal con \\(\\vec{g}\\).
+            </div>
+            <div class="text-amber-700 font-bold font-mono text-[11px] mt-1.5">
+              Líneas trazadas: <strong>${linesDone} de 3</strong>. ${linesDone >= 2 ? '\\(\\checkmark\\) El punto de concurrencia señala el Centro de Gravedad.' : 'Traza al menos 2 líneas desde diferentes pivotes.'}
+            </div>
+          `;
+        }
+      } else if (state.activeModule === 3) {
+        const thetaRad = (state.m3.inclineAngle * Math.PI) / 180;
+        const b = state.m3.baseWidth;
+        const h = state.m3.cgHeight;
+        const critAngleRad = Math.atan((b / 2) / h);
+        const critAngleDeg = (critAngleRad * 180) / Math.PI;
+
+        // Lever arm of gravity about the downhill pivot:
+        // Position of CG relative to downhill wheel:
+        // In ramp coordinates: CG is at x = 0 (middle), y = h. Downhill wheel is at x = +b/2, y = 0.
+        // In world coordinates rotated by theta:
+        // Distance from CG vertical line to lower wheel contact point:
+        // dx = (b/2)*cos(theta) - h*sin(theta)
+        const margin = (b / 2) * Math.cos(thetaRad) - h * Math.sin(thetaRad);
+        const isStable = margin > 0.001;
+
+        if (isStable) {
+          statusPill.className = "self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-bold";
+          statusText.innerHTML = "SISTEMA ESTABLE: PESO CAE DENTRO DE LA BASE";
+        } else {
+          statusPill.className = "self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse";
+          statusText.innerHTML = "¡VUELCO INMINENTE! LÍNEA DEL PESO FUERA DE LA BASE";
+        }
+
+        display.innerHTML = `
+          <div class="text-gray-700 font-semibold mb-1 text-[11px] text-amber-400">Cálculo del Ángulo Crítico de Vuelco:</div>
+          <div>$$\\theta_c = \\arctan\\left(\\frac{b/2}{h}\\right) = \\arctan\\left(\\frac{${(b/2).toFixed(2)}}{${h.toFixed(2)}}\\right) = ${critAngleDeg.toFixed(1)}^\\circ$$</div>
+          <div class="border-t border-gray-200 my-1 pt-1 text-[11px]">
+            Inclinación actual: \\(\\theta = ${state.m3.inclineAngle.toFixed(1)}^\\circ\\)
+          </div>
+          <div>$$\\text{Brazo restaurador } d_R = \\frac{b}{2}\\cos\\theta - h\\sin\\theta = ${margin.toFixed(3)}\\text{ m}$$</div>
+          <div class="text-[11px] ${isStable ? 'text-emerald-700 font-bold' : 'text-rose-400 font-bold'}">
+            ${isStable ? `Torca restauradora \\(\\tau_R > 0\\) (Retorna a la base).` : `Torca desestabilizadora \\(\\tau_D < 0\\) (Produce vuelco).`}
+          </div>
+        `;
+      } else if (state.activeModule === 4) {
+        const sub = state.m4.subState;
+        let subText = "";
+        let formula = "";
+
+        if (sub === 'stable') {
+          statusPill.className = "self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 bg-emerald-500/10 border-emerald-500/30 text-emerald-700 font-bold";
+          statusText.innerHTML = "EQUILIBRIO ESTABLE: MÍNIMO DE ENERGÍA POTENCIAL";
+          formula = "\\frac{d^2 U}{dx^2} > 0 \\implies \\vec{F}_{\\text{rest}} = -k\\,\\vec{x}";
+          subText = "Al perturbar el sistema, el CG se eleva (aumenta U) y surge una fuerza/torca opuesta al desplazamiento.";
+        } else if (sub === 'unstable') {
+          statusPill.className = "self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 bg-rose-500/10 border-rose-500/30 text-rose-400";
+          statusText.innerHTML = "EQUILIBRIO INESTABLE: MÁXIMO DE ENERGÍA POTENCIAL";
+          formula = "\\frac{d^2 U}{dx^2} < 0 \\implies \\vec{F}_{\\text{des}} = +k\\,\\vec{x}";
+          subText = "Al menor desplazamiento, el CG desciende a niveles más bajos de energía potencial alejándose sin retorno.";
+        } else {
+          statusPill.className = "self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold border transition-colors flex items-center gap-1.5 bg-blue-500/10 border-blue-500/30 text-blue-700 font-bold";
+          statusText.innerHTML = "EQUILIBRIO INDIFERENTE / NEUTRO";
+          formula = "\\frac{dU}{dx} = 0 \\quad \\forall x \\implies \\sum \\vec{\\tau} = \\vec{0}";
+          subText = "La altura del CG permanece inalterada ante cualquier translación o giro; el cuerpo permanece en equilibrio en su nueva posición.";
+        }
+
+        display.innerHTML = `
+          <div class="text-gray-700 font-semibold mb-1 text-[11px] text-blue-700 font-bold">Criterio Energético y Fuerzas Generalizadas:</div>
+          <div>$$${formula}$$</div>
+          <div class="text-[11px] text-gray-700 mt-1 leading-relaxed">
+            ${subText}
+          </div>
+          <div class="mt-2 text-[10px] text-gray-500 font-medium font-mono">
+            Perturbación actual: \\(\\Delta x = ${(state.m4.perturbation * 20).toFixed(1)}\\text{ cm}\\)
+          </div>
+        `;
+      }
+
+      // Render math expressions via KaTeX
+      if (window.renderMathInElement) {
+        renderMathInElement(display, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ]
+        });
+        renderMathInElement(statusText, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '\\(', right: '\\)', display: false}
+          ]
+        });
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw subtle background coordinate grid
+      drawGrid();
+
+      if (state.activeModule === 1) {
+        drawModule1();
+      } else if (state.activeModule === 2) {
+        drawModule2();
+      } else if (state.activeModule === 3) {
+        drawModule3();
+      } else if (state.activeModule === 4) {
+        drawModule4();
+      }
+    }
+
+    function drawGrid() {
+      const step = 35;
+      ctx.save();
+      ctx.strokeStyle = "rgba(203, 213, 225, 0.7)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x = 0; x < width; x += step) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+      }
+      for (let y = 0; y < height; y += step) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Helper to draw clean vector arrows with label and angle
+    function drawVectorArrow(fromX, fromY, toX, toY, color, label, showComponents = false) {
+      const headlen = 10;
+      const dx = toX - fromX;
+      const dy = toY - fromY;
+      const angle = Math.atan2(dy, dx);
+
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+
+      // Draw dashed component projections if requested
+      if (showComponents && (Math.abs(dx) > 5 && Math.abs(dy) > 5)) {
+        ctx.save();
+        ctx.setLineDash([3, 3]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = `${color}88`;
+        // X component
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, fromY);
+        ctx.stroke();
+        // Y component
+        ctx.beginPath();
+        ctx.moveTo(toX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Main vector line
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+
+      // Arrow head
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      // Label
+      if (label) {
+        ctx.font = "bold 12px Inter, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 4;
+        ctx.fillText(label, toX + 12 * Math.cos(angle), toY + 12 * Math.sin(angle));
+      }
+      ctx.restore();
+    }
+
+    function drawModule1() {
+      const scale = 80;
+      const cx = width / 2;
+      const cy = height / 2 + state.m1.beamY;
+
+      // Calculate dynamic acceleration if not balanced
+      const rad1 = (state.m1.theta1 * Math.PI) / 180;
+      const rad2 = (state.m1.theta2 * Math.PI) / 180;
+      const F1y = state.m1.F1 * Math.sin(rad1);
+      const F2y = state.m1.F2 * Math.sin(rad2);
+      const sumFy = F1y + F2y + state.m1.F3;
+      const sumTau = -state.m1.d1 * F1y + state.m1.d2 * F2y;
+
+      // Damped dynamic motion if unbalanced
+      if (Math.abs(sumTau) > 0.5) {
+        const I = 0.5 * state.m1.leverMass * (2.5 * 2.5); // moment of inertia
+        const alpha = sumTau / I;
+        state.m1.angularVelocity += alpha * 0.016;
+        state.m1.rotationAngle += state.m1.angularVelocity * 0.016;
+        state.m1.angularVelocity *= 0.96; // damping
+      } else {
+        state.m1.angularVelocity *= 0.85;
+      }
+
+      if (state.m1.preset === 'transl_accel') {
+        state.m1.linearVy += (sumFy / state.m1.leverMass) * 0.016;
+        state.m1.beamY -= state.m1.linearVy * 0.5;
+        // Bounce within screen
+        if (state.m1.beamY > 90) { state.m1.beamY = 90; state.m1.linearVy *= -0.5; }
+        if (state.m1.beamY < -90) { state.m1.beamY = -90; state.m1.linearVy *= -0.5; }
+      }
+
+      // Draw Fulcrum Pivot Base
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      // Support triangle
+      ctx.fillStyle = "#cbd5e1";
+      ctx.strokeStyle = "#64748b";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-24, 45);
+      ctx.lineTo(24, 45);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Hatching floor under fulcrum
+      ctx.beginPath();
+      ctx.moveTo(-35, 45);
+      ctx.lineTo(35, 45);
+      ctx.stroke();
+      for (let i = -30; i <= 30; i += 10) {
+        ctx.beginPath();
+        ctx.moveTo(i, 45);
+        ctx.lineTo(i - 6, 53);
+        ctx.stroke();
+      }
+
+      // Apply beam rotation
+      ctx.rotate(state.m1.rotationAngle);
+
+      // Draw Rigid Lever Beam
+      const beamHalfLen = 2.4 * scale;
+      const beamThickness = 14;
+      ctx.fillStyle = "#e2e8f0";
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(-beamHalfLen, -beamThickness / 2, beamHalfLen * 2, beamThickness, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Metric graduations on the beam
+      ctx.fillStyle = "#334155";
+      ctx.font = "bold 9px JetBrains Mono";
+      for (let m = -2.0; m <= 2.0; m += 0.5) {
+        if (Math.abs(m) < 0.01) continue;
+        const gx = m * scale;
+        ctx.beginPath();
+        ctx.moveTo(gx, -beamThickness / 2);
+        ctx.lineTo(gx, beamThickness / 2);
+        ctx.stroke();
+        ctx.fillText(`${Math.abs(m).toFixed(1)}m`, gx - 10, -12);
+      }
+
+      // Pivot pin
+      ctx.fillStyle = "#f59e0b";
+      ctx.beginPath();
+      ctx.arc(0, 0, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Points of application of forces
+      const p1x = -state.m1.d1 * scale;
+      const p2x = state.m1.d2 * scale;
+
+      ctx.fillStyle = "#3b82f6";
+      ctx.beginPath();
+      ctx.arc(p1x, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#f97316";
+      ctx.beginPath();
+      ctx.arc(p2x, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      // Draw Force Vectors in global coordinates
+      // Point 1 in world coords:
+      const p1WorldX = cx + Math.cos(state.m1.rotationAngle) * p1x;
+      const p1WorldY = cy + Math.sin(state.m1.rotationAngle) * p1x;
+
+      const p2WorldX = cx + Math.cos(state.m1.rotationAngle) * p2x;
+      const p2WorldY = cy + Math.sin(state.m1.rotationAngle) * p2x;
+
+      // Force 1 vector arrow
+      const fScale = 1.3;
+      const vec1Len = state.m1.F1 * fScale;
+      // In physics standard: angle theta is with horizontal +X. Canvas Y is down.
+      // -cos(theta), sin(theta)
+      const f1TargetX = p1WorldX + vec1Len * Math.cos(rad1);
+      const f1TargetY = p1WorldY - vec1Len * Math.sin(rad1);
+      drawVectorArrow(p1WorldX, p1WorldY, f1TargetX, f1TargetY, "#38bdf8", `F₁ = ${state.m1.F1}N (${state.m1.theta1}°)`, true);
+
+      // Force 2 vector arrow
+      const vec2Len = state.m1.F2 * fScale;
+      const f2TargetX = p2WorldX + vec2Len * Math.cos(rad2);
+      const f2TargetY = p2WorldY - vec2Len * Math.sin(rad2);
+      drawVectorArrow(p2WorldX, p2WorldY, f2TargetX, f2TargetY, "#fb923c", `F₂ = ${state.m1.F2}N (${state.m1.theta2}°)`, true);
+
+      // Draw Torque Visual Curved Indicator at pivot
+      if (Math.abs(sumTau) > 0.5) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = "#facc15";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        const startA = sumTau > 0 ? 0.3 : Math.PI;
+        const endA = sumTau > 0 ? Math.PI * 1.3 : -0.3;
+        ctx.arc(0, 0, 32, startA, endA, sumTau < 0);
+        ctx.stroke();
+        ctx.fillStyle = "#facc15";
+        ctx.font = "bold 11px Inter";
+        ctx.fillText(`Στ = ${sumTau.toFixed(1)} N·m`, 38, -15);
+        ctx.restore();
+      }
+    }
+
+    function drawModule2() {
+      const scale = 70;
+
+      if (state.m2.mode === 'discrete') {
+        // Draw coordinate axes
+        ctx.save();
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.4)";
+        ctx.lineWidth = 1.5;
+        // X Axis
+        ctx.beginPath();
+        ctx.moveTo(40, height / 2);
+        ctx.lineTo(width - 40, height / 2);
+        ctx.stroke();
+        // Y Axis
+        ctx.beginPath();
+        ctx.moveTo(width / 2, 40);
+        ctx.lineTo(width / 2, height - 40);
+        ctx.stroke();
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "11px JetBrains Mono";
+        ctx.fillText("+X", width - 35, height / 2 - 8);
+        ctx.fillText("+Y", width / 2 + 8, 45);
+        ctx.fillText("(0,0)", width / 2 + 6, height / 2 + 15);
+        ctx.restore();
+
+        // Calculate CM
+        let sumM = 0;
+        let sumMx = 0;
+        let sumMy = 0;
+        state.m2.particles.forEach(p => {
+          sumM += p.m;
+          sumMx += p.m * p.x;
+          sumMy += p.m * p.y;
+        });
+        const xcm = sumMx / sumM;
+        const ycm = sumMy / sumM;
+        const cmCanvasX = toCanvasX(xcm, scale);
+        const cmCanvasY = toCanvasY(ycm, scale);
+
+        // Draw connections from each mass to CM (dashed)
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
+        ctx.lineWidth = 1;
+        state.m2.particles.forEach(p => {
+          const px = toCanvasX(p.x, scale);
+          const py = toCanvasY(p.y, scale);
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(cmCanvasX, cmCanvasY);
+          ctx.stroke();
+        });
+        ctx.restore();
+
+        // Draw particles
+        state.m2.particles.forEach(p => {
+          const px = toCanvasX(p.x, scale);
+          const py = toCanvasY(p.y, scale);
+          const radius = 10 + p.m * 2.2;
+
+          ctx.save();
+          // Halo glow
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Border
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Label
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 11px Inter";
+          ctx.fillText(`${p.label} (${p.m}kg)`, px + radius + 4, py - 4);
+          ctx.font = "10px JetBrains Mono";
+          ctx.fillStyle = "#94a3b8";
+          ctx.fillText(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`, px + radius + 4, py + 10);
+          ctx.restore();
+        });
+
+        // Draw Center of Mass (Target Reticle)
+        ctx.save();
+        ctx.strokeStyle = "#ef4444";
+        ctx.fillStyle = "#ef4444";
+        ctx.lineWidth = 2.5;
+
+        // Reticle circle
+        ctx.beginPath();
+        ctx.arc(cmCanvasX, cmCanvasY, 14, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Crosshairs
+        ctx.beginPath();
+        ctx.moveTo(cmCanvasX - 22, cmCanvasY);
+        ctx.lineTo(cmCanvasX + 22, cmCanvasY);
+        ctx.moveTo(cmCanvasX, cmCanvasY - 22);
+        ctx.lineTo(cmCanvasX, cmCanvasY + 22);
+        ctx.stroke();
+
+        // Inner solid dot
+        ctx.beginPath();
+        ctx.arc(cmCanvasX, cmCanvasY, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Center of mass badge
+        ctx.font = "bold 12px Inter";
+        ctx.fillStyle = "#f87171";
+        ctx.fillText(`Centro de Masas (CM)`, cmCanvasX + 18, cmCanvasY - 14);
+        ctx.font = "11px JetBrains Mono";
+        ctx.fillStyle = "#fecaca";
+        ctx.fillText(`(${xcm.toFixed(2)}, ${ycm.toFixed(2)})m`, cmCanvasX + 18, cmCanvasY);
+        ctx.restore();
+
+      } else {
+        // Plumb line method visualization
+        const cx = width / 2;
+        const cy = 120; // Pivot hanging mount point
+        const activePivot = state.m2.plumbPivots[state.m2.plumbPivotIndex];
+
+        // Harmonic swing of suspended lamina toward equilibrium
+        const damping = 0.96;
+        const restoringAcc = -0.04 * state.m2.plumbAngle;
+        state.m2.plumbAngularVel += restoringAcc;
+        state.m2.plumbAngularVel *= damping;
+        state.m2.plumbAngle += state.m2.plumbAngularVel;
+
+        // Draw ceiling mount and pin
+        ctx.save();
+        ctx.fillStyle = "#475569";
+        ctx.fillRect(cx - 40, cy - 25, 80, 10);
+        ctx.strokeStyle = "#94a3b8";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx - 40, cy - 25, 80, 10);
+
+        ctx.fillStyle = "#f59e0b";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Draw swinging suspended irregular body
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(state.m2.plumbAngle);
+
+        // Translate such that the active pivot point of the body is at (0,0)
+        ctx.translate(-activePivot.px, -activePivot.py);
+
+        // Irregular body shape
+        ctx.fillStyle = "rgba(30, 41, 59, 0.85)";
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        const pts = state.m2.bodyShapePoints;
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) {
+          ctx.lineTo(pts[i].x, pts[i].y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw each pivot hole
+        state.m2.plumbPivots.forEach((pv, idx) => {
+          ctx.fillStyle = idx === state.m2.plumbPivotIndex ? "#f59e0b" : "#64748b";
+          ctx.beginPath();
+          ctx.arc(pv.px, pv.py, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
+          ctx.fillStyle = "#e2e8f0";
+          ctx.font = "bold 10px Inter";
+          ctx.fillText(pv.name, pv.px + 8, pv.py - 6);
+        });
+
+        // Draw previously traced vertical lines onto the lamina coordinate system!
+        state.m2.plumbPivots.forEach((pv, idx) => {
+          if (state.m2.tracedLines[idx]) {
+            ctx.save();
+            ctx.strokeStyle = "#10b981";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 3]);
+            // Line passing through pivot along that pivot's vertical alignment
+            ctx.beginPath();
+            ctx.moveTo(pv.px, pv.py - 120);
+            ctx.lineTo(pv.px, pv.py + 180);
+            ctx.stroke();
+            ctx.restore();
+          }
+        });
+
+        // The true geometric CG of this irregular lamina is approximately (0, 0) in lamina space
+        const trueCG = { x: 0, y: 0 };
+        const tracedCount = state.m2.tracedLines.filter(Boolean).length;
+        if (tracedCount >= 2) {
+          ctx.save();
+          ctx.fillStyle = "#ef4444";
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(trueCG.x, trueCG.y, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.font = "bold 12px Inter";
+          ctx.fillStyle = "#f87171";
+          ctx.fillText("Centro de Gravedad (CG)", trueCG.x + 12, trueCG.y - 8);
+          ctx.restore();
+        }
+
+        ctx.restore();
+
+        // Draw the physical Plumb Line (cord + heavy bob) hanging strictly vertical under gravity!
+        ctx.save();
+        ctx.strokeStyle = "#fb923c";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx, cy + 240);
+        ctx.stroke();
+
+        // Heavy lead bob
+        ctx.fillStyle = "#f97316";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + 240);
+        ctx.lineTo(cx - 8, cy + 255);
+        ctx.lineTo(cx, cy + 270);
+        ctx.lineTo(cx + 8, cy + 255);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.font = "bold 11px Inter";
+        ctx.fillStyle = "#fdba74";
+        ctx.fillText("Plomada Gravitatoria (Dirección del Peso P)", cx + 14, cy + 220);
+        ctx.restore();
+      }
+    }
+
+    function drawModule3() {
+      const scale = 110;
+      const groundY = height - 100;
+      const rampLen = 420;
+
+      const thetaRad = (state.m3.inclineAngle * Math.PI) / 180;
+      const b = state.m3.baseWidth;
+      const h = state.m3.cgHeight;
+
+      const critAngleRad = Math.atan((b / 2) / h);
+      const isOverturning = thetaRad > critAngleRad;
+
+      // Draw horizontal reference ground
+      ctx.save();
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(40, groundY);
+      ctx.lineTo(width - 40, groundY);
+      ctx.stroke();
+
+      // Draw inclined plane ramp
+      const rampStartX = 90;
+      const rampEndX = rampStartX + rampLen * Math.cos(thetaRad);
+      const rampEndY = groundY - rampLen * Math.sin(thetaRad);
+
+      ctx.fillStyle = "rgba(30, 41, 59, 0.8)";
+      ctx.strokeStyle = "#3b82f6";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(rampStartX, groundY);
+      ctx.lineTo(rampEndX, rampEndY);
+      ctx.lineTo(rampEndX, groundY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Angle indicator arc
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(rampStartX, groundY, 50, 0, -thetaRad, true);
+      ctx.stroke();
+      ctx.fillStyle = "#facc15";
+      ctx.font = "bold 12px JetBrains Mono";
+      ctx.fillText(`θ = ${state.m3.inclineAngle.toFixed(1)}°`, rampStartX + 60, groundY - 14);
+      ctx.restore();
+
+      // Position of the vehicle / model along the ramp
+      const s = 210; // distance up the ramp
+      const carBaseX = rampStartX + s * Math.cos(thetaRad);
+      const carBaseY = groundY - s * Math.sin(thetaRad);
+
+      ctx.save();
+      ctx.translate(carBaseX, carBaseY);
+      ctx.rotate(-thetaRad);
+
+      // Vehicle coordinates: center is at x=0 on base surface.
+      const halfB = (b / 2) * scale;
+      const cgY = -h * scale;
+
+      // Draw wheels or feet contact points (Base of Support)
+      ctx.fillStyle = "#0f172a";
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 3;
+
+      // Left wheel (uphill)
+      ctx.beginPath();
+      ctx.arc(-halfB, -12, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Right wheel (downhill)
+      ctx.beginPath();
+      ctx.arc(halfB, -12, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Highlight Base de Sustentación Line
+      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-halfB, 0);
+      ctx.lineTo(halfB, 0);
+      ctx.stroke();
+
+      // Vehicle / Body Chassis
+      if (state.m3.vehicleType === 'camilla') {
+        // Gurney / Emergency vehicle bed
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.strokeStyle = isOverturning ? "#f43f5e" : "#38bdf8";
+        ctx.lineWidth = 2.5;
+
+        // Frame
+        ctx.beginPath();
+        ctx.roundRect(-halfB - 10, cgY - 30, (halfB * 2) + 20, 50, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        // Medical Cross Symbol
+        ctx.fillStyle = isOverturning ? "#f43f5e" : "#38bdf8";
+        ctx.fillRect(-6, cgY - 16, 12, 22);
+        ctx.fillRect(-15, cgY - 11, 30, 12);
+      } else {
+        // Human standing figure (coronal view)
+        ctx.strokeStyle = isOverturning ? "#f43f5e" : "#38bdf8";
+        ctx.fillStyle = "rgba(30, 41, 59, 0.8)";
+        ctx.lineWidth = 3;
+
+        // Legs connecting to wheels/feet
+        ctx.beginPath();
+        ctx.moveTo(-halfB, -12);
+        ctx.lineTo(0, cgY + 15);
+        ctx.lineTo(halfB, -12);
+        ctx.stroke();
+
+        // Torso & head
+        ctx.beginPath();
+        ctx.moveTo(0, cgY + 15);
+        ctx.lineTo(0, cgY - 25);
+        ctx.arc(0, cgY - 38, 12, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Draw Center of Gravity (CG)
+      ctx.fillStyle = "#f97316";
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, cgY, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#fdba74";
+      ctx.font = "bold 11px Inter";
+      ctx.fillText("CG (Baricentro)", 14, cgY + 4);
+
+      // Measure lines for b and h
+      ctx.strokeStyle = "#64748b";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-halfB, 22);
+      ctx.lineTo(halfB, 22);
+      ctx.stroke();
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "10px JetBrains Mono";
+      ctx.fillText(`b = ${b.toFixed(2)} m`, -24, 35);
+
+      ctx.restore();
+
+      // Transform CG to Canvas Global Coordinates to draw Vertical Gravity Vector (P)
+      // CG in ramp coordinates is (0, cgY)
+      // Rotated by -theta:
+      const cgWorldX = carBaseX - cgY * Math.sin(thetaRad);
+      const cgWorldY = carBaseY + cgY * Math.cos(thetaRad);
+
+      // Downhill wheel contact point in world coordinates:
+      const wheel2WorldX = carBaseX + halfB * Math.cos(thetaRad);
+      const wheel2WorldY = carBaseY - halfB * Math.sin(thetaRad);
+
+      // Uphill wheel contact point:
+      const wheel1WorldX = carBaseX - halfB * Math.cos(thetaRad);
+      const wheel1WorldY = carBaseY + halfB * Math.sin(thetaRad);
+
+      // Vertical line of action of weight: straight DOWN in canvas
+      ctx.save();
+      ctx.strokeStyle = isOverturning ? "#f43f5e" : "#10b981";
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(cgWorldX, cgWorldY - 20);
+      ctx.lineTo(cgWorldX, groundY + 40);
+      ctx.stroke();
+
+      // Draw weight force vector arrow
+      drawVectorArrow(cgWorldX, cgWorldY, cgWorldX, cgWorldY + 110, isOverturning ? "#f43f5e" : "#10b981", `P = ${state.m3.vehicleWeight} N`);
+
+      // Ground intersection point
+      // Intersect vertical line x = cgWorldX with ramp line
+      // Ramp line equation from carBase:
+      // Contact point of vertical weight line on ramp base plane:
+      // Distance from downhill wheel along ramp plane:
+      // dx_plane = (b/2)*cos(theta) - h*sin(theta)
+      ctx.fillStyle = isOverturning ? "#f43f5e" : "#10b981";
+      ctx.beginPath();
+      ctx.arc(cgWorldX, carBaseY + (cgWorldX - carBaseX) * Math.tan(-thetaRad), 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Status annotation
+      ctx.font = "bold 12px Inter";
+      if (isOverturning) {
+        ctx.fillStyle = "#f43f5e";
+        ctx.fillText("¡P cae FUERA de la base! Torque desestabilizador", cgWorldX + 15, cgWorldY + 50);
+      } else {
+        ctx.fillStyle = "#10b981";
+        ctx.fillText("P dentro de la base: Estable", cgWorldX + 15, cgWorldY + 50);
+      }
+
+      ctx.restore();
+    }
+
+    function drawModule4() {
+      const cx = width / 2;
+      const cy = height / 2 + 50;
+
+      // Dynamics simulation for perturbed state
+      const sub = state.m4.subState;
+      const dt = 0.016;
+
+      if (!state.m4.isDragging) {
+        if (sub === 'stable') {
+          // Restoring harmonic force towards 0
+          const k = 14;
+          const damping = 0.95;
+          const acc = -k * state.m4.perturbation;
+          state.m4.perturbVelocity += acc * dt;
+          state.m4.perturbVelocity *= damping;
+          state.m4.perturbation += state.m4.perturbVelocity * dt;
+        } else if (sub === 'unstable') {
+          // Destabilizing force AWAY from 0
+          if (Math.abs(state.m4.perturbation) > 0.02) {
+            const k = 10;
+            const acc = Math.sign(state.m4.perturbation) * k * Math.abs(state.m4.perturbation);
+            state.m4.perturbVelocity += acc * dt;
+            state.m4.perturbation += state.m4.perturbVelocity * dt;
+            // Cap to boundary
+            if (Math.abs(state.m4.perturbation) > 2.0) {
+              state.m4.perturbation = Math.sign(state.m4.perturbation) * 2.0;
+              state.m4.perturbVelocity = 0;
+            }
+          }
+        } else {
+          // Neutral: stays at perturbed position
+          state.m4.perturbVelocity = 0;
+        }
+      }
+
+      const pX = state.m4.perturbation * 80;
+
+      if (state.m4.systemType === 'bowl') {
+        // Sphere in curved bowl / hill / flat table
+        const R = 180;
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // Draw Surface
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+
+        if (sub === 'stable') {
+          // Concave bowl (minimum of potential energy)
+          ctx.arc(0, -R + 30, R, 0.25 * Math.PI, 0.75 * Math.PI, false);
+        } else if (sub === 'unstable') {
+          // Convex hill (maximum of potential energy)
+          ctx.arc(0, R - 30, R, 1.25 * Math.PI, 1.75 * Math.PI, false);
+        } else {
+          // Flat neutral surface
+          ctx.moveTo(-160, 30);
+          ctx.lineTo(160, 30);
+        }
+        ctx.stroke();
+
+        // Calculate sphere position
+        const rSphere = 22;
+        let sphereY = 30 - rSphere;
+        if (sub === 'stable') {
+          // Y on circle of radius (R - rSphere)
+          const angle = state.m4.perturbation * 0.45;
+          const sX = (R - rSphere) * Math.sin(angle);
+          const sY = (-R + 30) + (R - rSphere) * Math.cos(angle);
+          drawSphereAndCG(sX, sY, rSphere, sub);
+        } else if (sub === 'unstable') {
+          const angle = state.m4.perturbation * 0.45;
+          const sX = (R + rSphere) * Math.sin(angle);
+          const sY = (R - 30) - (R + rSphere) * Math.cos(angle);
+          drawSphereAndCG(sX, sY, rSphere, sub);
+        } else {
+          drawSphereAndCG(pX, 30 - rSphere, rSphere, sub);
+        }
+
+        ctx.restore();
+
+      } else if (state.m4.systemType === 'cone') {
+        // Solid body / Cone on flat surface
+        ctx.save();
+        ctx.translate(cx, cy);
+
+        // Ground
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-180, 50);
+        ctx.lineTo(180, 50);
+        ctx.stroke();
+
+        const hCone = 110;
+        const bCone = 70;
+
+        if (sub === 'stable') {
+          // Cone resting on base: tilt angle depends on perturbation
+          const tilt = state.m4.perturbation * 0.35;
+          ctx.save();
+          ctx.translate(pX, 50);
+          ctx.rotate(tilt);
+          // Cone geometry (base at y=0, apex at -hCone)
+          ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
+          ctx.strokeStyle = "#38bdf8";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(-bCone / 2, 0);
+          ctx.lineTo(bCone / 2, 0);
+          ctx.lineTo(0, -hCone);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // CG of solid cone is at h/4 from base
+          const cgY = -hCone / 4;
+          drawCGMark(0, cgY, "CG (h/4)");
+          ctx.restore();
+
+        } else if (sub === 'unstable') {
+          // Cone balanced on its sharp apex!
+          const tilt = state.m4.perturbation * 0.6;
+          ctx.save();
+          ctx.translate(0, 50);
+          ctx.rotate(tilt);
+
+          ctx.fillStyle = "rgba(244, 63, 94, 0.25)";
+          ctx.strokeStyle = "#f43f5e";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(0, 0); // apex at ground
+          ctx.lineTo(-bCone / 2, -hCone);
+          ctx.lineTo(bCone / 2, -hCone);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // CG is at 3h/4 from apex
+          const cgY = -3 * hCone / 4;
+          drawCGMark(0, cgY, "CG (Elevado)");
+          ctx.restore();
+
+        } else {
+          // Cone or cylinder lying on its generator side (indifferent)
+          ctx.save();
+          ctx.translate(pX, 50 - bCone / 4);
+
+          ctx.fillStyle = "rgba(59, 130, 246, 0.25)";
+          ctx.strokeStyle = "#3b82f6";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 50, bCone / 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          drawCGMark(0, 0, "CG (Eje neutro)");
+          ctx.restore();
+        }
+
+        ctx.restore();
+
+      } else {
+        // Pendulum vs Inverted Pendulum
+        ctx.save();
+        ctx.translate(cx, cy - 30);
+
+        // Fixed Pivot Pin
+        ctx.fillStyle = "#f59e0b";
+        ctx.beginPath();
+        ctx.arc(0, 0, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const len = 120;
+        const angle = state.m4.perturbation * 0.7;
+
+        if (sub === 'stable') {
+          // Regular suspended pendulum: CG below pivot
+          const bobX = len * Math.sin(angle);
+          const bobY = len * Math.cos(angle);
+
+          ctx.strokeStyle = "#94a3b8";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(bobX, bobY);
+          ctx.stroke();
+
+          drawCGMark(bobX, bobY, "CG (Bajo el pivote)");
+
+        } else if (sub === 'unstable') {
+          // Inverted pendulum: CG above pivot (standing stick)
+          const bobX = len * Math.sin(angle);
+          const bobY = -len * Math.cos(angle);
+
+          ctx.strokeStyle = "#f43f5e";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(bobX, bobY);
+          ctx.stroke();
+
+          drawCGMark(bobX, bobY, "CG (Sobre el pivote)");
+
+        } else {
+          // Neutral: wheel centered exactly at pivot
+          ctx.strokeStyle = "#3b82f6";
+          ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, 65, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Spoke rotating with perturbation
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(65 * Math.cos(angle), 65 * Math.sin(angle));
+          ctx.stroke();
+
+          drawCGMark(0, 0, "CG en el eje de giro");
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function drawSphereAndCG(x, y, r, sub) {
+      ctx.save();
+      ctx.fillStyle = sub === 'stable' ? "#38bdf8" : (sub === 'unstable' ? "#f43f5e" : "#10b981");
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // CG dot at sphere center
+      drawCGMark(x, y, "CG");
+      ctx.restore();
+    }
+
+    function drawCGMark(x, y, label) {
+      ctx.save();
+      ctx.fillStyle = "#f97316";
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      if (label) {
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px Inter";
+        ctx.shadowColor = "rgba(0,0,0,0.8)";
+        ctx.shadowBlur = 4;
+        ctx.fillText(label, x + 10, y - 4);
+      }
+      ctx.restore();
+    }
+
+    let isPointerDown = false;
+    let draggedElement = null;
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      isPointerDown = true;
+
+      if (state.activeModule === 2 && state.m2.mode === 'discrete') {
+        // Check if clicked near any particle
+        const scale = 70;
+        state.m2.particles.forEach(p => {
+          const px = toCanvasX(p.x, scale);
+          const py = toCanvasY(p.y, scale);
+          const dist = Math.hypot(mouseX - px, mouseY - py);
+          if (dist < 25) {
+            draggedElement = p;
+          }
+        });
+      } else if (state.activeModule === 4) {
+        state.m4.isDragging = true;
+        const normX = (mouseX - width / 2) / 80;
+        state.m4.perturbation = Math.max(-1.5, Math.min(1.5, normX));
+        syncM4();
+      }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!isPointerDown) return;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      if (state.activeModule === 2 && state.m2.mode === 'discrete' && draggedElement) {
+        const scale = 70;
+        draggedElement.x = Math.max(-3.5, Math.min(3.5, fromCanvasX(mouseX, scale)));
+        draggedElement.y = Math.max(-2.5, Math.min(2.5, fromCanvasY(mouseY, scale)));
+        updateMath();
+      } else if (state.activeModule === 4 && state.m4.isDragging) {
+        const normX = (mouseX - width / 2) / 80;
+        state.m4.perturbation = Math.max(-1.5, Math.min(1.5, normX));
+        state.m4.perturbVelocity = 0;
+        syncM4();
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      isPointerDown = false;
+      draggedElement = null;
+      if (state.activeModule === 4) {
+        state.m4.isDragging = false;
+      }
+    });
+
+    function animate() {
+      draw();
+      animFrameId = requestAnimationFrame(animate);
+    }
+
+    // Initialize application on window load
+    window.onload = function () {
+      resizeCanvas();
+      switchModule(1);
+      animate();
+    };
+  </script>
+</body>
+</html>
